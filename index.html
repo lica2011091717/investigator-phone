@@ -170,6 +170,12 @@ else{v.innerHTML=`<div class="eyebrow">SETTINGS</div><h2>設定</h2><div class="
 
 function openPoliceEmail(){document.getElementById('view').innerHTML=`<button class="secondary" onclick="render('mail')">‹ 返回收件匣</button><div class="card" style="background:#fff;color:#20232a;margin-top:12px;line-height:1.8"><div class="eyebrow">CAMBODIA · POLICE CASE FILE · 模擬信件</div><h2 style="font-size:21px">失蹤學童導師訪談紀錄</h2><p class="small">寄件者：當地警方｜案件調查組<br>收件者：調查員<br>日期：2025 年 6 月 13 日 09:15<br>主旨：Prey Sela 失蹤學童｜導師訪談</p><hr><p>調查員您好：</p><p>警方已訪談失蹤學生的導師。以下為訪談摘要：</p><div style="background:#f3f5f8;padding:13px;border-radius:12px"><b>導師證詞</b><p>「這些孩子原本很喜歡上學，但最近村莊連日大雨，田裡的作物受損，有些家庭付不起生活費。」</p><p>「幾名學生曾經提到，有人說可以介紹工作，讓他們賺錢寄回家。」</p><p>「我聽到其中一個孩子問：『如果去泰國工作，真的可以賺很多錢嗎？』但我不知道他們是否真的去了那裡。」</p></div><p><b>警方研判：</b>孩子可能接觸到跨境招工資訊，但目前尚未確認去向，也不能確定招工者的身分。</p><p>請調查員在 Safari 嘗試查找「<b>泰國打工</b>」或「<b>泰國工作</b>」，看看是否存在可疑招募訊息，並記錄其招募條件。</p><p class="small">提醒：此為課堂虛構案件。未成年人跨境工作與高薪招募廣告可能涉及剝削風險。</p></div>`}
 // W-06 調查簡訊：所有內容為課堂虛構，聊天記錄保存在同一瀏覽器。
+// 第二幕：必須先在 Safari 搜尋招工，再真正接通 Mr. Pich，才收到 W-06 簡訊。
+const W06_SEARCH_KEY='investigator_thai_job_searched_v27';
+const W06_PICH_CALL_KEY='investigator_pich_called_v27';
+function plotFlag(key){try{return localStorage.getItem(key)==='yes'}catch(e){return window[key]===true}}
+function setPlotFlag(key){window[key]=true;try{localStorage.setItem(key,'yes')}catch(e){}}
+function w06Available(){return plotFlag(W06_SEARCH_KEY)&&plotFlag(W06_PICH_CALL_KEY)}
 const W06_MESSAGE_KEY='investigator_w06_chat_v18';
 
 const WAREHOUSE_MAIL_KEY='investigation_warehouse_mail_unlocked_v21';
@@ -220,6 +226,11 @@ function w06Reply(text){
 }
 function renderW06Messages(){
  const v=document.getElementById('view');
+ if(!w06Available()){
+  v.innerHTML=`<div class="w06-app"><div class="w06-head"><div class="w06-avatar">?</div><div><b>神秘人 W-06</b><div class="small">簡訊</div></div></div><div class="w06-thread"><div style="text-align:center;color:#8e8e93;font-size:13px;padding:35px 15px">目前沒有新訊息</div></div><div class="w06-foot">收到新訊息後，就可以在這裡回覆。</div></div>`;
+  return;
+ }
+
  v.innerHTML=`<div class="w06-app"><div class="w06-head"><div class="w06-avatar">?</div><div><b>神秘人 W-06</b><div class="small">簡訊 · 調查線索</div></div></div><div class="w06-thread" id="w06Thread"><div class="w06-date">2025 年 6 月 13 日</div><div class="w06-line"><div class="w06-bubble">${escapePhoneHTML(W06_OPENING)}</div></div>${w06History.map(x=>`<div class="w06-line ${x.who==='me'?'out':''}"><div class="w06-bubble">${escapePhoneHTML(x.text)}</div></div>`).join('')}</div><form class="w06-compose" id="w06Form"><input id="w06Input" autocomplete="off" maxlength="500" aria-label="回覆 W-06" placeholder="輸入你的調查想法……"/><button type="button" id="w06Send" onclick="sendW06Message()" aria-label="傳送訊息">➤</button></form><div class="w06-foot">請輸入中文回覆；訊息會自動保留在本機瀏覽器。</div></div>`;
  const input=document.getElementById('w06Input');
  input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.isComposing){e.preventDefault();sendW06Message();}});
@@ -227,6 +238,7 @@ function renderW06Messages(){
  const thread=document.getElementById('w06Thread');thread.scrollTop=thread.scrollHeight;
 }
 function sendW06Message(){
+ if(!w06Available())return;
  const el=document.getElementById('w06Input');
  if(!el)return;
  const message=el.value.trim();
@@ -237,13 +249,13 @@ function sendW06Message(){
  renderW06Messages();
  const input=document.getElementById('w06Input');if(input)input.focus();
 }
-function searchSafari(){const q=(document.getElementById('safariQuery')?.value||'').replace(/\s/g,'');if(q.includes('泰國')&&(q.includes('打工')||q.includes('工作'))){openRecruitAd()}else{document.getElementById('view').innerHTML=`<div class="safari-shell"><button class="secondary" onclick="render('safari')">‹ 返回搜尋</button><h2>搜尋結果</h2><p>找不到符合「${escapePhoneHTML(q)}」的調查資料。</p><p class="small">請參考警方郵件中提到的關鍵字。</p></div>`}}
+function searchSafari(){const q=(document.getElementById('safariQuery')?.value||'').replace(/\s/g,'');if(q.includes('泰國')&&(q.includes('打工')||q.includes('工作'))){setPlotFlag(W06_SEARCH_KEY);openRecruitAd()}else{document.getElementById('view').innerHTML=`<div class="safari-shell"><button class="secondary" onclick="render('safari')">‹ 返回搜尋</button><h2>搜尋結果</h2><p>找不到符合「${escapePhoneHTML(q)}」的調查資料。</p><p class="small">請參考警方郵件中提到的關鍵字。</p></div>`}}
 function escapePhoneHTML(t){return t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const RECRUIT_PHONE='000-000-0612'; // 專供遊戲顯示的保留虛構號碼，不可外撥
 function openRecruitAd(){document.getElementById('view').innerHTML=`<div class="safari-shell" style="line-height:1.65"><button class="secondary" onclick="render('safari')">‹ 返回 Safari</button><div style="margin-top:12px;background:#fff;border-radius:14px;padding:16px"><span style="font-size:11px;color:#777">贊助搜尋結果 · 課堂模擬廣告</span><h2 style="color:#143b70;font-size:22px;margin:8px 0">海外工作機會｜泰國</h2><p class="small">刊登日期：2025 年 6 月 8 日 · 資訊未經核實</p><p><b>聯絡人：Mr. Pich</b></p><p>招募願意前往泰國工作的新人，宣稱高薪及免費交通。點開各項條件查看詳情。</p><details style="margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:10px"><summary style="cursor:pointer;font-weight:700">👥 招募年齡</summary><p>14–18 歲也可報名，無須工作經驗。</p></details><details style="margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:10px"><summary style="cursor:pointer;font-weight:700">📍 前往國家與地點</summary><p>泰國，邊境附近。未公開公司地址。</p></details><details style="margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:10px"><summary style="cursor:pointer;font-weight:700">💰 薪水與工作內容</summary><p>宣稱每月 1,000 美元，提供食宿；工作內容只寫「簡單協助」。</p></details><details style="margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:10px"><summary style="cursor:pointer;font-weight:700">🚌 交通安排</summary><p>宣稱免費接送，詳細行程需電話詢問。</p></details><div style="background:#f0f5fb;padding:12px;border-radius:12px;margin:14px 0"><div class="small">聯絡電話 · 虛構遊戲號碼</div><strong style="font-size:21px;letter-spacing:1px">${RECRUIT_PHONE}</strong><p class="small" style="margin:5px 0 0">僅限遊戲內模擬通話，無法撥打真實電話。</p></div><button onclick="startRecruitCall()" style="width:100%;background:#1eaf69;border:0;color:#fff;padding:14px;border-radius:13px;font-size:16px;font-weight:700">☎ Contact Now／立即聯絡</button><p class="small" style="margin-top:12px">⚠️ 這是供學生辨識可疑招募訊息的虛構案例，請勿提供真實個資。</p></div></div>`}
 let recruitStep=0,recruitAsked=new Set(),recruitEnded=false,recruitAudioCtx=null;
 function recruitBeep(freq=700,duration=.11){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;recruitAudioCtx=recruitAudioCtx||new AC();if(recruitAudioCtx.state==='suspended')recruitAudioCtx.resume();const o=recruitAudioCtx.createOscillator(),g=recruitAudioCtx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(.0001,recruitAudioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.045,recruitAudioCtx.currentTime+.015);g.gain.exponentialRampToValueAtTime(.0001,recruitAudioCtx.currentTime+duration);o.connect(g).connect(recruitAudioCtx.destination);o.start();o.stop(recruitAudioCtx.currentTime+duration+.02)}catch(e){}}
-function startRecruitCall(){const layer=document.getElementById('callOverlay');const title=layer.querySelector('h2'),bubble=layer.querySelector('.callbubble');if(!layer.dataset.originalTitle){layer.dataset.originalTitle=title.innerHTML;layer.dataset.originalBubble=bubble.innerHTML;}recruitStep=0;recruitAsked=new Set();recruitEnded=false;title.textContent='Mr. Pich';state.dial=RECRUIT_PHONE.replace(/\D/g,'');showCall();recruitBeep();renderRecruitConversation()}
+function startRecruitCall(){setPlotFlag(W06_PICH_CALL_KEY);const layer=document.getElementById('callOverlay');const title=layer.querySelector('h2'),bubble=layer.querySelector('.callbubble');if(!layer.dataset.originalTitle){layer.dataset.originalTitle=title.innerHTML;layer.dataset.originalBubble=bubble.innerHTML;}recruitStep=0;recruitAsked=new Set();recruitEnded=false;title.textContent='Mr. Pich';state.dial=RECRUIT_PHONE.replace(/\D/g,'');showCall();recruitBeep();renderRecruitConversation()}
 function renderRecruitConversation(){const bubble=document.querySelector('#callOverlay .callbubble');if(!bubble)return;const qs=[['A','工作的人什麼時候出發？'],['B','工作地點在哪裡？'],['C','你認識 6 月 12 日失蹤的三名孩子嗎？']];let body='<div class="eyebrow">Mr. Pich · '+(recruitEnded?'通話中斷':'正在通話（模擬）')+'</div>';
 if(recruitStep===0)body+='<p>☎「你好！我是 Mr. Pich。我們正在招募到泰國工作的人。薪水很高，交通免費！有什麼想問的嗎？」</p>';
 else body+='<p>☎「你還想知道什麼？」</p>';
